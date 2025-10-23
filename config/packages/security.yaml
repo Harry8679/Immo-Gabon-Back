@@ -9,34 +9,37 @@ security:
                 property: email
 
     firewalls:
-        # 🔑 Point d'entrée pour l'auth JWT
+        # 🔑 Firewall de connexion JWT
         login:
-            pattern: ^/api/login$
+            pattern: ^/api/login
             stateless: true
             provider: app_user_provider
             json_login:
-                check_path: /api/login
-                username_path: email
-                password_path: password
+                check_path: /api/login        # ✅ Route utilisée pour le login
+                username_path: email                # Champ utilisé pour l'authentification
+                password_path: password             # Champ utilisé pour le mot de passe
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
-        # 🚪 Routes publiques (register, docs, etc.)
+        # 🚪 Routes publiques : inscription, docs, profiler, etc.
         dev:
-            pattern: ^/(_(profiler|wdt)|docs|api/docs|api/register)$
+            pattern: ^/(_(profiler|wdt)|docs|api/docs|api/register)
             security: false
 
-        # 🔒 Routes protégées
+        # 🔒 Routes sécurisées par token JWT
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
 
+        # 🏠 Firewall par défaut (souvent inutilisé ici)
         main:
             lazy: true
             provider: app_user_provider
 
     access_control:
+        # Autoriser l’accès public à /api/login et /api/register
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        # Exiger une authentification JWT pour le reste des routes /api
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
