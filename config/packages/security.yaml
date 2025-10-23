@@ -1,60 +1,42 @@
 security:
-    # 1️⃣ Hashage des mots de passe
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
-    # 2️⃣ Fournisseur d'utilisateurs (via l'entité User)
     providers:
         app_user_provider:
             entity:
                 class: App\Entity\User
                 property: email
 
-    # 3️⃣ Définition des firewalls (zones de sécurité)
     firewalls:
-        # Point d'entrée pour le login JWT
+        # 🔑 Point d'entrée pour l'auth JWT
         login:
-            pattern: ^/api/login
+            pattern: ^/api/login$
             stateless: true
             provider: app_user_provider
             json_login:
-                check_path: /api/login        # URL à appeler pour se connecter
-                username_path: email          # champ utilisé pour identifier l'utilisateur
-                password_path: password       # champ utilisé pour le mot de passe
+                check_path: /api/login
+                username_path: email
+                password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
-        # Routes publiques (ex: inscription, documentation)
+        # 🚪 Routes publiques (register, docs, etc.)
         dev:
-            pattern: ^/(_(profiler|wdt)|docs|api/docs|api/register)/
+            pattern: ^/(_(profiler|wdt)|docs|api/docs|api/register)$
             security: false
 
-        # L'API principale sécurisée par JWT
+        # 🔒 Routes protégées
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
 
-        # (Optionnel) Firewall principal - utile si tu ajoutes un site web plus tard
         main:
             lazy: true
             provider: app_user_provider
 
-    # 4️⃣ Règles d’accès globales
     access_control:
-        # Routes publiques
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
-
-        # Toutes les autres routes de l'API nécessitent un token JWT valide
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
-
-when@test:
-    security:
-        password_hashers:
-            # Réduction du coût pour accélérer les tests
-            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
-                algorithm: auto
-                cost: 4        # plus rapide pour bcrypt
-                time_cost: 3   # plus rapide pour argon2
-                memory_cost: 10
