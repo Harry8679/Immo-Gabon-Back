@@ -1,63 +1,60 @@
 security:
-    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    # 1️⃣ Hashage des mots de passe
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
-    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+
+    # 2️⃣ Fournisseur d'utilisateurs (via l'entité User)
     providers:
-        # used to reload user from session & other features (e.g. switch_user)
         app_user_provider:
             entity:
                 class: App\Entity\User
                 property: email
+
+    # 3️⃣ Définition des firewalls (zones de sécurité)
     firewalls:
+        # Point d'entrée pour le login JWT
         login:
             pattern: ^/api/login
             stateless: true
+            provider: app_user_provider
             json_login:
-                check_path: /api/login_check
-                username_path: email
-                password_path: password
+                check_path: /api/login        # URL à appeler pour se connecter
+                username_path: email          # champ utilisé pour identifier l'utilisateur
+                password_path: password       # champ utilisé pour le mot de passe
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
-        
-        # Routes publiques (inscriptio, documentation, etc.)
+
+        # Routes publiques (ex: inscription, documentation)
         dev:
-            # pattern: ^/(_(profiler|wdt)|css|images|js)/
             pattern: ^/(_(profiler|wdt)|docs|api/docs|api/register)/
             security: false
+
         # L'API principale sécurisée par JWT
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
+
+        # (Optionnel) Firewall principal - utile si tu ajoutes un site web plus tard
         main:
             lazy: true
             provider: app_user_provider
 
-            # activate different ways to authenticate
-            # https://symfony.com/doc/current/security.html#the-firewall
-
-            # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
-
-    # Easy way to control access for large sections of your site
-    # Note: Only the *first* access control that matches will be used
+    # 4️⃣ Règles d’accès globales
     access_control:
+        # Routes publiques
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
+
+        # Toutes les autres routes de l'API nécessitent un token JWT valide
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
 
 when@test:
     security:
         password_hashers:
-            # By default, password hashers are resource intensive and take time. This is
-            # important to generate secure password hashes. In tests however, secure hashes
-            # are not important, waste resources and increase test times. The following
-            # reduces the work factor to the lowest possible values.
+            # Réduction du coût pour accélérer les tests
             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
                 algorithm: auto
-                cost: 4 # Lowest possible value for bcrypt
-                time_cost: 3 # Lowest possible value for argon
-                memory_cost: 10 # Lowest possible value for argon
+                cost: 4        # plus rapide pour bcrypt
+                time_cost: 3   # plus rapide pour argon2
+                memory_cost: 10
