@@ -29,6 +29,15 @@ final class AuthController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        return $this->json(['message' => 'Votre compte a bien été créé !']);
+        return $this->json([
+            'message' => 'Votre compte a bien été créé !',
+            'user' => [
+                'id' => $user->getId(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'email' => $user->getEmail(),
+                'phoneNumber' => $user->getPhoneNumber(),
+            ]
+        ]);
     }
 }
